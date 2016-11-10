@@ -54,7 +54,9 @@ import i5.las2peer.services.versioningService.exception.GitHubException;
 import io.swagger.annotations.*;
 
 import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;  
 import com.google.gson.JsonObject;
+
 
 
 
@@ -117,71 +119,7 @@ public class VersioningService extends Service {
 		// HttpResponse response = new HttpResponse();
 		return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
 	}
-	
-	/**
-	 * Test redirect to GitHub Sign In page, but this method is wrong! Use link directly in HTML!
-	 * 
-	 * @return HttpResponse with the returnString
-	 */
-	/*@GET
-	@Path("/testgithub")
-	@Produces(MediaType.TEXT_HTML)
-	@ApiOperation(value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME", notes = "REPLACE THIS WITH YOUR NOTES TO THE FUNCTION")
-	@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Test success"),
-			@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized") })
-	public HttpResponse testGitHubtestAccessGitHubLogin() {
-		String returnString = "";
-		int returnCode=0;
-		try{
-			URL url = new URL("https://github.com/login/oauth/authorize?client_id="+ this.gitHubClientID
-						//+ "&redirect_uri="+ "http://localhost:8080/template/getinfo"
-					);
-			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-			connection.setRequestMethod("GET");	
-			connection.setDoInput(true);
-		    connection.setDoOutput(true);
-		    connection.setUseCaches(false);
-		    
-		    System.out.println("Orignal URL: " + connection.getURL());
-		    connection.connect();
-			System.out.println("Connected URL: " + connection.getURL());
-			InputStream is = connection.getInputStream();
-			URL redirectUrl = connection.getURL(); 
-			System.out.println("Redirected URL: " + redirectUrl);
-			
 
-		    
-			returnCode = connection.getResponseCode();
-			BufferedReader in = new BufferedReader(new InputStreamReader(is));
-			String inputLine;
-			
-			StringBuilder stringBuilder = new StringBuilder();
-			String finalString = stringBuilder.toString();
-			while ((inputLine = in.readLine()) != null) 
-			{
-				//System.out.println(inputLine);
-				stringBuilder.append(inputLine);
-				stringBuilder.append("\n");
-			}			
-			returnString = stringBuilder.toString();
-			is.close();
-			in.close();
-			logger.log(Level.INFO,String.valueOf(returnCode));
-			HttpResponse response = new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
-			// set headers
-			response.setHeader(HttpHeaders.CONTENT_TYPE, MediaType.TEXT_HTML);
-			
-			//HttpURLConnection redirectConnection = (HttpURLConnection) redirectUrl.openConnection();
-			//System.out.println("FINAL Redirected URL: " +redirectConnection.getURL());
-			return response;			
-	    }
-		catch(Exception e){
-			logger.log(Level.SEVERE,"WRONG!",e);
-			logger.printStackTrace(e);
-			return new HttpResponse(String.valueOf(returnCode)+" ERROR:"+e.getMessage(), 500);
-		}
-	}
-	*/
 	
 	/**
 	 * Get GitHub return code, in order to exchange access token in the future
@@ -249,6 +187,52 @@ public class VersioningService extends Service {
 		}
 	}
 	
+	/**
+	 * Get GitHub authenticated user 
+	 * see https://developer.github.com/v3/users/#get-the-authenticated-user
+	 * 
+	 * @return HttpResponse with the returnString
+	 */
+	@GET
+	@Path("/getCurrentGitHubUser")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value = {
+			@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "REPLACE THIS WITH YOUR OK MESSAGE"),
+			@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized")
+	})
+	@ApiOperation(value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "Example method that returns a phrase containing the received input.")
+	public HttpResponse getCurrentGitHubUser(@HeaderParam(value = HttpHeaders.AUTHORIZATION) String accessToken) {
+		try{
+			URL url = new URL("https://api.github.com/user");
+			System.out.println(url);
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			//connection.setRequestProperty ("Authorization", "token "+accessToken);
+			connection.setRequestProperty ("Authorization", accessToken);
+			connection.setUseCaches(false);
+			connection.setDoInput(true);
+			connection.setDoOutput(true);
+			connection.setConnectTimeout(7000);
+			
+			String outputString = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line;
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				outputString = outputString + line;
+			}
+			reader.close();
+			//System.out.println(outputString);
+			HttpResponse user = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
+			return user;
+		}catch (Exception e) {
+			logger.log(Level.SEVERE, "getCurrentGitHubUser error",e);
+			logger.printStackTrace(e);
+			return new HttpResponse(e.getMessage(), 500);
+		}
+	}
+	
 	
 	/**
 	 * Get use code to get GitHub access_token
@@ -309,37 +293,10 @@ public class VersioningService extends Service {
 					returnString = accessToken;
 				}
 				logger.log(Level.INFO,"accessToken: "+accessToken);
-				/*url = new URL("https://api.github.com/orgs/Co-Design-Platform/repos");
-				System.out.println(url);
-
-				HttpURLConnection myURLConnection = (HttpURLConnection) url
-						.openConnection();
-				myURLConnection.setRequestProperty("Authorization", "token "
-						+ accessToken);
-				//myURLConnection.setRequestProperty("User-Agent", appName);
-				myURLConnection.setRequestMethod("GET");
-				myURLConnection.setUseCaches(false);
-				myURLConnection.setDoInput(true);
-				myURLConnection.setDoOutput(true);
-				myURLConnection.setConnectTimeout(7000);
-
-				outputString = "";
-				reader = new BufferedReader(new InputStreamReader(
-						myURLConnection.getInputStream()));
-				while ((line = reader.readLine()) != null) {
-					outputString = outputString + line;
-				}
-				reader.close();
-				System.out.println(outputString);
-				//JSONObject jsonOutput = new JSONObject(outputString);
-				HttpResponse OrgRes = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
-				return OrgRes;*/
 				Gson gson = new Gson();
 		        return new HttpResponse(gson.toJson(returnString), HttpURLConnection.HTTP_OK);
 			}
 		 }catch (Exception e) {
-				// logger.log(Level.SEVERE, "Can't read file (" + identifier + ")
-				// content from network storage! ", e);
 				logger.log(Level.SEVERE, "getGitHubToken problem:", e);
 				logger.printStackTrace(e);
 				return new HttpResponse(e.getMessage(), 500);
@@ -368,7 +325,6 @@ public class VersioningService extends Service {
 			
 			logger.log(Level.INFO, "Create a new repo");
 			logger.log(Level.INFO,"access token:"+ accessToken);
-			logger.log(Level.INFO,"project info:");
 			logger.log(Level.INFO, project);
 			
 //			JsonObject jobj = new Gson().fromJson(project, JsonObject.class);
@@ -376,39 +332,50 @@ public class VersioningService extends Service {
 //			logger.log(Level.INFO, jobj.get("description").toString());
 //			logger.log(Level.INFO, jobj.toString());
 
-			//URL url = new URL("https://api.github.com/orgs/Co-Design-Platform/repos?access_token="+accessToken);
 			URL url = new URL("https://api.github.com/orgs/Co-Design-Platform/repos");
 
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();	
-			connection.setRequestProperty ("Authorization", "token "+accessToken);
+			//connection.setRequestProperty ("Authorization", "token "+accessToken);
+			connection.setRequestProperty ("Authorization", accessToken);
+
 			connection.setRequestMethod("POST");
 			connection.setRequestProperty("Content-Type", "application/json");
 			connection.setConnectTimeout(20000);
 			connection.setDoOutput(true);
 			
 			logger.log(Level.INFO,"request url:"+connection.getURL().toString());		
-			
-			//String input = "{\"name\":\"bear\"}";
-		
+					
 			OutputStream os = connection.getOutputStream();
 			os.write(project.getBytes("UTF-8"));
-			//			os.write(jobj.toString().getBytes("UTF-8"));
 			os.flush();
 
 			if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
-				throw new RuntimeException("Failed : HTTP error code : "
-						+ connection.getResponseCode()+" error msg: "+connection.getResponseMessage());
+//				throw new RuntimeException("code : "
+//						+ connection.getResponseCode()+",msg: "+connection.getResponseMessage());	
+				BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
+				String line;
+				String errorString="";
+				while ((line = reader.readLine()) != null) {
+					errorString = errorString + line;
+				}
+				throw new GitHubException(connection.getResponseCode(), connection.getResponseMessage(), errorString);
 			}
 
-			BufferedReader br = new BufferedReader(new InputStreamReader(
-					(connection.getInputStream())));
-
-			String output;
-			System.out.println("Output from Server .... \n");
-			while ((output = br.readLine()) != null) {
-				System.out.println(output);
-			}
 			
+			
+//			if (200 <= conn.getResponseCode() && conn.getResponseCode() <= 299) {
+//			    br = new BufferedReader(new InputStreamReader((conn.getInputStream())));
+//			} else {
+//			    br = new BufferedReader(new InputStreamReader((conn.getErrorStream())));
+//			}
+			
+			String outputString = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line;
+			while ((line = reader.readLine()) != null) {
+				outputString = outputString + line;
+			}
+
 			//the response header fields
 			logger.log(Level.INFO,"getHeaderFields():"+connection.getHeaderFields().toString());
 
@@ -419,16 +386,25 @@ public class VersioningService extends Service {
 			logger.log(Level.INFO,"getResponseMessage():"+connection.getResponseMessage());
 			logger.log(Level.INFO,"getErrorStream():"+connection.getErrorStream());
 
-			connection.disconnect();   
+			returnString = outputString;
+			connection.disconnect();			
 			
-		} catch (Exception e) {
+		}catch(GitHubException e1){
+			logger.log(Level.INFO, "GitHubException:"+String.valueOf(e1.getCode())+" "+ e1.getMessage() +" "+ e1.getErrorStream());
+			
+			GsonBuilder builder = new GsonBuilder();
+	        builder.excludeFieldsWithoutExposeAnnotation();
+	        final Gson gson = builder.create();
+			String result = gson.toJson(e1);
+			logger.log(Level.INFO, result);
+			returnString = result;
+		}catch (Exception e) {
+			logger.log(Level.INFO, "Exception:"+e.getMessage());
 			L2pLogger.logEvent(Event.SERVICE_MESSAGE,  e.getMessage());
 			logger.printStackTrace(e);
 			returnString = e.getMessage();
-
-			// return "Error: Generating code failed because of failing GitHub
-			// access: " + e.getMessage();
-		}
+		} 
+		
 		return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
 	}
 
