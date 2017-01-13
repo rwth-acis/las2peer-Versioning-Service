@@ -55,5 +55,6 @@
 	<classpathentry kind="lib" path="/Users/yuwenhuang/Downloads/servlet-api-2.5.jar"/>
 	<classpathentry kind="lib" path="lib/json-20160810.jar"/>
 	<classpathentry kind="lib" path="lib/gson-2.3.jar"/>
+	<classpathentry kind="lib" path="lib/github-api-1.79.jar"/>
 	<classpathentry kind="output" path="output"/>
 </classpath>

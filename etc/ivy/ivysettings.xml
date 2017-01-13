@@ -4,7 +4,10 @@
     <chain name="chain">
       <ibiblio name="central" m2compatible="true" />
       <ibiblio name="acis-internal" m2compatible="true" root="http://role.dbis.rwth-aachen.de:9911/archiva/repository/internal/"/>
-      <ibiblio name="acis-snapshots" m2compatible="true" root="http://role.dbis.rwth-aachen.de:9911/archiva/repository/snapshots/"/>
+      <ibiblio name="acis-snapshots" m2compatible="true" root="http://role.dbis.rwth-aachen.de:9911/archiva/repository/snapshots/"/>      
+      <!-- for  kohsuke/github-api see https://github.com/kohsuke/github-api/issues/195 and https://github.com/kohsuke/github-api/issues/257 -->
+      <ibiblio name="jenkins-ci" m2compatible="true" root="http://repo.jenkins-ci.org/releases"/>      
+    
     </chain>
   </resolvers>
 </ivysettings>
