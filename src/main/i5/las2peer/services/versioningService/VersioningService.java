@@ -27,7 +27,6 @@ import javax.ws.rs.core.Response;
 
 import org.kohsuke.github.*;
 
-
 import i5.las2peer.api.Service;
 import i5.las2peer.logging.L2pLogger;
 import i5.las2peer.logging.NodeObserver.Event;
@@ -39,12 +38,16 @@ import i5.las2peer.restMapper.RESTMapper;
 import i5.las2peer.restMapper.annotations.Version;
 import i5.las2peer.restMapper.tools.ValidationResult;
 import i5.las2peer.restMapper.tools.XMLCheck;
+import i5.las2peer.security.L2pSecurityException;
+import i5.las2peer.security.UserAgent;
 import i5.las2peer.services.versioningService.exception.GitHubException;
 import io.swagger.annotations.*;
 
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;  
 import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
+
 
 
 
@@ -85,6 +88,8 @@ public class VersioningService extends Service {
 		// TO BE CHANGED TOO!
 		setFieldValues();
 	}
+	
+	
 
 	// //////////////////////////////////////////////////////////////////////////////////////
 	// Service methods.
@@ -104,7 +109,8 @@ public class VersioningService extends Service {
 	@ApiResponses(value = { @ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Test success"),
 			@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized") })
 	public HttpResponse getTemplate() {
-		String returnString = "get testSimpleGet return, success!";
+		
+		String returnString = " get testSimpleGet return, success!";
 		// HttpResponse response = new HttpResponse();
 		return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
 	}
@@ -189,8 +195,8 @@ public class VersioningService extends Service {
 				outputString = outputString + line;
 			}
 			reader.close();
-			HttpResponse OrgRes = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
-			return OrgRes;
+			HttpResponse result = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
+			return result;
 		}catch(GitHubException e1){
 			logger.log(Level.INFO, "GitHubException:"+String.valueOf(e1.getCode())+" "+ e1.getMessage() +" "+ e1.getErrorStream());
 			GsonBuilder builder = new GsonBuilder();
@@ -230,7 +236,7 @@ public class VersioningService extends Service {
 			@QueryParam("org") String orgName,  
 			@QueryParam("repo") String repoName) {
 		try{
-			//example url: 'https://api.github.com/repos/Co-Design-Platform/test;
+			//example url: 'https://api.github.com/repos/Co-Design-Platform/panda;
 			URL url = new URL("https://api.github.com/repos/"+orgName+"/"+repoName);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestMethod("GET");
@@ -255,14 +261,73 @@ public class VersioningService extends Service {
 				outputString = outputString + line;
 			}
 			reader.close();
-			HttpResponse OrgRes = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
-			return OrgRes;
+			HttpResponse result = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
+			return result;
 		}catch (Exception e) {
 			logger.log(Level.SEVERE, "showAllRepos problem:", e);
 			logger.printStackTrace(e);
 			return new HttpResponse(e.getMessage(), 500);
 		}
 	}
+	
+	
+	/**
+	 * Get one specific repository's branch information
+	 * See https://developer.github.com/v3/repos/branches/#get-branch
+	 * @param accessToken GitHub access_token
+	 * @param orgName GitHub organization name
+	 * @param repoName GitHub repository name
+	 * @return HttpResponse with the returnString
+	 */
+	@GET
+	@Path("/projectbranchinfo")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value = {
+			@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Successfully get repositories list."),
+			@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized")
+	})
+	@ApiOperation(value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "Example method that returns a phrase containing the received input.")
+	public HttpResponse showProjectBranchInfo(
+			@HeaderParam(value = HttpHeaders.AUTHORIZATION) String accessToken, 
+			@QueryParam("org") String orgName,  
+			@QueryParam("repo") String repoName) {
+		try{
+			//example url: https://api.github.com/repos/Co-Design-Platform/panda/branches
+			URL url = new URL("https://api.github.com/repos/"+orgName+"/"+repoName+"/"+"branches");
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			logger.log(Level.INFO, "projects token:"+ accessToken);
+
+			if((!accessToken.equals("undefined")) && (accessToken.length()!=0)){
+				connection.setRequestProperty ("Authorization", "token "+accessToken);
+			}
+			connection.setUseCaches(false);
+			connection.setDoInput(true);
+			connection.setDoOutput(true);
+			connection.setConnectTimeout(7000);
+
+			logger.log(Level.INFO, "request url:"+ url.toString());
+
+			
+			String outputString = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line;
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				outputString = outputString + line;
+			}
+			reader.close();
+			HttpResponse result = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
+			return result;
+		}catch (Exception e) {
+			logger.log(Level.SEVERE, "showProjectBranchInfo problem:", e);
+			logger.printStackTrace(e);
+			return new HttpResponse(e.getMessage(), 500);
+		}
+	}
+	
+	
 	
 	/**
 	 * Get components of a repository
@@ -290,7 +355,7 @@ public class VersioningService extends Service {
 		try{
 			// GET /repos/:owner/:repo/contents/:path
 			// example url: https://api.github.com/repos/Co-Design-Platform/panda/contents?ref=master
-			URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName + "/contents/?ref" + branchName);
+			URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName + "/contents/?ref=" + branchName);
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 			connection.setRequestMethod("GET");
 			logger.log(Level.INFO, "projects token:"+ accessToken);
@@ -334,6 +399,62 @@ public class VersioningService extends Service {
 			HttpResponse result = new HttpResponse(newOutputString,HttpURLConnection.HTTP_OK);
 			return result;
 			
+		}catch (Exception e) {
+			logger.log(Level.SEVERE, "showAllRepos problem:", e);
+			logger.printStackTrace(e);
+			return new HttpResponse(e.getMessage(), 500);
+		}
+	}
+	
+	/**
+	 * Get one specific file information
+	 * @param accessToken GitHub access_token
+	 * @param orgName GitHub organization name
+	 * @param repoName GitHub repository name
+	 * @return HttpResponse with the returnString
+	 */
+	@GET
+	@Path("/componentinfo")
+	@Produces(MediaType.APPLICATION_JSON)
+	@ApiResponses(value = {
+			@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Successfully get repositories list."),
+			@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized")
+	})
+	@ApiOperation(value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME",
+			notes = "Example method that returns a phrase containing the received input.")
+	public HttpResponse getComponentInfo(
+			@HeaderParam(value = HttpHeaders.AUTHORIZATION) String accessToken, 
+			@QueryParam("org") String orgName,  
+			@QueryParam("repo") String repoName,
+			@QueryParam("branch") String branchName,
+			@QueryParam("path") String pathName) {
+		try{
+			//example url: https://api.github.com/repos/Co-Design-Platform/panda/contents/Sad_panda.svg?ref=master
+			URL url = new URL("https://api.github.com/repos/"+orgName+"/"+repoName+"/contents/"+ pathName+"?ref="+branchName);
+			HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+			connection.setRequestMethod("GET");
+			logger.log(Level.INFO, "projects token:"+ accessToken);
+
+			if((!accessToken.equals("undefined")) && (accessToken.length()!=0)){
+				connection.setRequestProperty ("Authorization", "token "+accessToken);
+			}
+			connection.setUseCaches(false);
+			connection.setDoInput(true);
+			connection.setDoOutput(true);
+			connection.setConnectTimeout(7000);
+
+			logger.log(Level.INFO, "request url:"+ url.toString());
+			
+			String outputString = "";
+			BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			String line;
+			reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+			while ((line = reader.readLine()) != null) {
+				outputString = outputString + line;
+			}
+			reader.close();
+			HttpResponse result = new HttpResponse(outputString,HttpURLConnection.HTTP_OK);
+			return result;
 		}catch (Exception e) {
 			logger.log(Level.SEVERE, "showAllRepos problem:", e);
 			logger.printStackTrace(e);
@@ -648,9 +769,8 @@ public class VersioningService extends Service {
 			connection.setConnectTimeout(20000);
 			connection.setDoOutput(true);
 			logger.log(Level.INFO,"request url:"+connection.getURL().toString());	
-			//https://api.github.com/repos/Co-Design-Platform/panda/contents/bear.svg
 			
-			// body contains commit message&file content
+			// body needs to contains branch & commit message & file content
 			OutputStream os = connection.getOutputStream();
 			os.write(body.getBytes());
 			os.flush();
@@ -683,8 +803,8 @@ public class VersioningService extends Service {
 			logger.log(Level.INFO,"getErrorStream():"+connection.getErrorStream());
 
 			returnString = outputString;
-			connection.disconnect();	
-			
+			connection.disconnect();
+			return new HttpResponse(returnString, HttpURLConnection.HTTP_OK); 
 		}catch(GitHubException e1){
 			logger.log(Level.INFO, "GitHubException:"+String.valueOf(e1.getCode())+" "+ e1.getMessage() +" "+ e1.getErrorStream());
 			GsonBuilder builder = new GsonBuilder();
@@ -693,13 +813,15 @@ public class VersioningService extends Service {
 			String result = gson.toJson(e1);
 			logger.log(Level.INFO, result);
 			returnString = result;
+			return new HttpResponse(returnString, e1.getCode());
 		}catch (Exception e){
 			logger.log(Level.INFO, "Exception:"+ e.getMessage());
 			L2pLogger.logEvent(Event.SERVICE_MESSAGE,  e.getMessage());
 			logger.printStackTrace(e);
 			returnString = e.getMessage();
+			return new HttpResponse(returnString, HttpURLConnection.HTTP_INTERNAL_ERROR);
 		} 
-		return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
+		//return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
 	}
 
 	
@@ -730,30 +852,31 @@ public class VersioningService extends Service {
 			@ContentParam String body) {
 		String returnString = "";
 		try{
-	
 			URL url = new URL("https://api.github.com/repos/"+orgName+"/"+repoName+"/contents/"+pathName);
 
 			HttpURLConnection connection = (HttpURLConnection) url.openConnection();	
 			connection.setRequestProperty ("Authorization", "token "+accessToken);
-			//connection.setRequestProperty ("Authorization", accessToken);
-
 			connection.setRequestMethod("PUT");
 			connection.setRequestProperty("Content-Type", "application/json");
 			connection.setConnectTimeout(20000);
 			connection.setDoOutput(true);
 			logger.log(Level.INFO,"request url:"+connection.getURL().toString());	
-			//https://api.github.com/repos/Co-Design-Platform/panda/contents/bear.svg
+			// https://api.github.com/repos/Co-Design-Platform/panda/contents/bear.svg
 			
-			// body contains commit message&file content
+			// body needs to contains sha & branch & commit message & file content
 			OutputStream os = connection.getOutputStream();
 			os.write(body.getBytes());
 			os.flush();
 			
 
-			// if create a file is failed
-			if (connection.getResponseCode() != HttpURLConnection.HTTP_CREATED) {
-//				throw new RuntimeException("code : "
-//						+ connection.getResponseCode()+",msg: "+connection.getResponseMessage());	
+			// if update a file is failed
+			if (connection.getResponseCode() != HttpURLConnection.HTTP_OK) {
+				logger.log(Level.INFO,"Update Error, ResponseCode is not 200");
+				logger.log(Level.INFO,"getHeaderFields():"+connection.getHeaderFields().toString());			
+				logger.log(Level.INFO,"getResponseCode():"+connection.getResponseCode());
+				logger.log(Level.INFO,"getResponseMessage():"+connection.getResponseMessage());
+				logger.log(Level.INFO,"getErrorStream():"+connection.getErrorStream());
+
 				BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getErrorStream()));
 				String line;
 				String errorString="";
@@ -779,8 +902,8 @@ public class VersioningService extends Service {
 			logger.log(Level.INFO,"getErrorStream():"+connection.getErrorStream());
 
 			returnString = outputString;
-			connection.disconnect();	
-			
+			connection.disconnect();
+			return new HttpResponse(returnString, HttpURLConnection.HTTP_OK); 			
 		}catch(GitHubException e1){
 			logger.log(Level.INFO, "GitHubException:"+String.valueOf(e1.getCode())+" "+ e1.getMessage() +" "+ e1.getErrorStream());
 			GsonBuilder builder = new GsonBuilder();
@@ -789,13 +912,15 @@ public class VersioningService extends Service {
 			String result = gson.toJson(e1);
 			logger.log(Level.INFO, result);
 			returnString = result;
+			return new HttpResponse(returnString, e1.getCode());
 		}catch (Exception e){
 			logger.log(Level.INFO, "Exception:"+ e.getMessage());
 			L2pLogger.logEvent(Event.SERVICE_MESSAGE,  e.getMessage());
 			logger.printStackTrace(e);
 			returnString = e.getMessage();
+			return new HttpResponse(returnString, HttpURLConnection.HTTP_INTERNAL_ERROR);
 		} 
-		return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
+		//return new HttpResponse(returnString, HttpURLConnection.HTTP_OK);
 	}
 
 
