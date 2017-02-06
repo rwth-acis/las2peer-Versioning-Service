@@ -71,6 +71,7 @@ public class VersioningServiceTest {
 		testAgent = MockAgentFactory.getAdam(); // get a locked agent
 
 	
+		/*
 		connector.updateServiceList();
 		// avoid timing errors: wait for the repository manager to get all services before continuing
 		try {
@@ -79,6 +80,7 @@ public class VersioningServiceTest {
 		} catch (InterruptedException e) {
 			e.printStackTrace();
 		}
+		*/
 
 	}
 
@@ -107,20 +109,16 @@ public class VersioningServiceTest {
 
 	/**
 	 * 
-	 * Tests the validation method.
-	 * 
 	 */
 	@Test 
-	public void testSimpleGet() {
+	public void testConfig() {
 		MiniClient c = new MiniClient();
 		c.setAddressPort(HTTP_ADDRESS, HTTP_PORT);
-
+		
 		try {
 			c.setLogin(Long.toString(testAgent.getId()), testPass);
-			ClientResponse result = c.sendRequest("GET", mainPath + "testsimpleget", "");
-			//assertEquals(200, result.getHttpCode());
-			//assertTrue(result.getResponse().trim().contains("success")); // YOUR RESULT VALUE HERE
-			//System.out.println("Result of 'testSimpleGet': " + result.getResponse().trim());
+			ClientResponse result = c.sendRequest("GET", mainPath + "properties", "");
+			assertEquals(200, result.getHttpCode());
 		} catch (Exception e) {
 			e.printStackTrace();
 			fail("Exception: " + e);
@@ -174,10 +172,12 @@ public class VersioningServiceTest {
 	/**
 	 * Test the TemplateService for valid rest mapping. Important for development.
 	 */
+	/*
 	@Test
 	public void testDebugMapping() {
 		VersioningService cl = new VersioningService();
 		assertTrue(cl.debugMapping());
 	}
+	*/
 
 }
