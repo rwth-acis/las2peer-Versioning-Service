@@ -29,6 +29,7 @@ import javax.ws.rs.core.Response.Status;
 import org.kohsuke.github.*;
 
 import i5.las2peer.api.Context;
+import i5.las2peer.p2p.AgentNotKnownException;
 
 //import i5.las2peer.api.Service;
 //import i5.las2peer.logging.L2pLogger;
@@ -210,6 +211,7 @@ public class VersioningService extends RESTService {
 				userAgent.setLoginName(userName);
 				userAgent.setEmail(userEmail);
 
+				
 				Context.getCurrent().getLocalNode().storeAgent(userAgent);
 				logger.log(Level.INFO, "userAgent.getID():" + userAgent.getId());
 				returnString = "user agent name:" + userName+", id:"+ userAgent.getId();
@@ -229,7 +231,7 @@ public class VersioningService extends RESTService {
 		@Path("/getcurrentagent")
 		@Produces(MediaType.APPLICATION_JSON)
 		@ApiResponses(value = {
-				@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Successfully get repositories list."),
+				@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "Successfully get agent."),
 				@ApiResponse(code = HttpURLConnection.HTTP_UNAUTHORIZED, message = "Unauthorized") })
 		@ApiOperation(value = "REPLACE THIS WITH AN APPROPRIATE FUNCTION NAME", notes = "Example method that returns a phrase containing the received input.")
 		public Response getCurrentAgent() {
@@ -245,12 +247,15 @@ public class VersioningService extends RESTService {
 				UserAgent userAgent = (UserAgent) Context.getCurrent().getMainAgent();
 				long agendId = userAgent.getId();
 				String agentName = userAgent.getLoginName();
+			
 				
 				//logger.log(Level.INFO, "Context.getCurrent().getMainAgent().getId():" + agentid);
+				logger.log(Level.INFO, "UserAgent:" + userAgent.toString());
 				logger.log(Level.INFO, "UserAgent Id:" + agendId);
 				logger.log(Level.INFO, "UserAgent getLoginName():" + agentName);
 
-				returnString = agentName;
+				Gson gson = new Gson();
+				returnString = gson.toJson(agentName);
 				return Response.ok().entity(returnString).build();
 			}
 			catch (Exception e) {
@@ -283,11 +288,10 @@ public class VersioningService extends RESTService {
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
 
-				logger.log(Level.INFO, "projects token:" + accessToken);
-
 				if (accessToken != null) {
 					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
 						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
 					}
 				}
 
@@ -367,11 +371,14 @@ public class VersioningService extends RESTService {
 				URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName);
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
-				logger.log(Level.INFO, "accessToken token:" + accessToken);
-
-				if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
-					connection.setRequestProperty("Authorization", "token " + accessToken);
+				
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
 				}
+				
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
@@ -424,11 +431,14 @@ public class VersioningService extends RESTService {
 				URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName + "/" + "branches");
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
-				logger.log(Level.INFO, "projects token:" + accessToken);
 
-				if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
-					connection.setRequestProperty("Authorization", "token " + accessToken);
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
 				}
+				
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
 				connection.setDoOutput(true);
@@ -486,10 +496,12 @@ public class VersioningService extends RESTService {
 						"https://api.github.com/repos/" + orgName + "/" + repoName + "/contents/?ref=" + branchName);
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
-				logger.log(Level.INFO, "projects token:" + accessToken);
 
-				if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
-					connection.setRequestProperty("Authorization", "token " + accessToken);
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
 				}
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
@@ -567,10 +579,12 @@ public class VersioningService extends RESTService {
 						+ "?ref=" + branchName);
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
-				logger.log(Level.INFO, "projects token:" + accessToken);
 
-				if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
-					connection.setRequestProperty("Authorization", "token " + accessToken);
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
 				}
 				connection.setUseCaches(false);
 				connection.setDoInput(true);
@@ -605,7 +619,6 @@ public class VersioningService extends RESTService {
 		 */
 		@GET
 		@Path("/getsvgcontent")
-		// @Produces(MediaType.APPLICATION_XML)
 		@Produces("image/svg+xml")
 		@ApiResponses(value = {
 				@ApiResponse(code = HttpURLConnection.HTTP_OK, message = "REPLACE THIS WITH YOUR OK MESSAGE"),
@@ -617,6 +630,7 @@ public class VersioningService extends RESTService {
 				// example
 				// url:https://raw.githubusercontent.com/Co-Design-Platform/panda/master/Taipei_Zoo.png
 				URL url = new URL(svgUrl);
+				logger.log(Level.INFO, "request url:" + url.toString());
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
 				connection.setUseCaches(false);
@@ -639,6 +653,8 @@ public class VersioningService extends RESTService {
 				// return result;
 				
 				returnString = outputString;
+				logger.log(Level.INFO, returnString);
+
 				return Response.ok().entity(returnString).build();
 
 			} catch (Exception e) {
@@ -671,11 +687,11 @@ public class VersioningService extends RESTService {
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
 				connection.setRequestMethod("GET");
 
-				logger.log(Level.INFO, "url:" + url + ", token:" + accessToken);
 
 				if (accessToken != null) {
 					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
 						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
 					}
 				}
 
@@ -939,7 +955,14 @@ public class VersioningService extends RESTService {
 				URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName + "/contents/" + pathName);
 
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				connection.setRequestProperty("Authorization", "token " + accessToken);
+
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
+				}
+				//connection.setRequestProperty("Authorization", "token " + accessToken);
 
 				connection.setRequestMethod("PUT");
 				connection.setRequestProperty("Content-Type", "application/json");
@@ -1037,7 +1060,13 @@ public class VersioningService extends RESTService {
 				URL url = new URL("https://api.github.com/repos/" + orgName + "/" + repoName + "/contents/" + pathName);
 
 				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				connection.setRequestProperty("Authorization", "token " + accessToken);
+
+				if (accessToken != null) {
+					if ((!accessToken.equals("undefined")) && (accessToken.length() != 0)) {
+						connection.setRequestProperty("Authorization", "token " + accessToken);
+						logger.log(Level.INFO, "projects token:" + accessToken);
+					}
+				}
 				connection.setRequestMethod("PUT");
 				connection.setRequestProperty("Content-Type", "application/json");
 				connection.setConnectTimeout(20000);
