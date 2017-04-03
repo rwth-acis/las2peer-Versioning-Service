@@ -85,7 +85,7 @@ import com.google.gson.JsonParser;
 
 import i5.las2peer.services.versioningService.exception.GitHubException;
 
-@ServicePath("/template")
+@ServicePath("/CoDesign")
 @Api
 @SwaggerDefinition(info = @Info(
 		title = "Co-Design Project Generation Service",
